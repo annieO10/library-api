@@ -1,6 +1,7 @@
 
 const cors = require("cors");
 const express = require("express");
+const { PutObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
 
 const app = express();
 
@@ -71,6 +72,29 @@ app.post("/upload", upload.single("pdf"), async (req, res) => {
   }
   
 
+});
+
+app.get("/files", async (req, res) => {
+  try {
+
+    const command = new ListObjectsV2Command({
+      Bucket: process.env.R2_BUCKET_NAME
+    });
+
+    const result = await r2.send(command);
+
+    const files = result.Contents?.map(file => ({
+      key: file.Key,
+      size: file.Size,
+      lastModified: file.LastModified
+    })) || [];
+
+    res.json(files);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to list files" });
+  }
 });
 
 const PORT = process.env.PORT || 10000;
