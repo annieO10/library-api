@@ -19,11 +19,15 @@ app.get("/books", (req, res) => {
 });
 
 app.post("/books", (req, res) => {
-  const book = req.body;
+  const newBook = req.body;
+
+  newBook.id = books.length + 1;
+
+  books.push(newBook);
 
   res.json({
     message: "Book added",
-    data: book
+    book: newBook
   });
 });
 
