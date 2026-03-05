@@ -42,7 +42,6 @@ app.get("/health", (req, res) => {
 });
 
 const multer = require("multer");
-const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const r2 = require("./r2Client");
 
 const upload = multer({ storage: multer.memoryStorage() });
