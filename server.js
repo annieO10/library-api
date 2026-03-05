@@ -11,12 +11,16 @@ app.get("/", (req, res) => {
   res.send("Library API is running ✅");
 });
 
+let books = [
+  { id: 1, url: "Book One"}
+];
+
+
 app.get("/books", (req, res) => {
-  res.json([
-    { id: 1, url: "Book One"},
-    { id: 2, url: "Book Two"}
-  ]);
+  res.json(books);
 });
+
+
 
 app.post("/books", (req, res) => {
   const newBook = req.body;
