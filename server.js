@@ -85,7 +85,7 @@ app.get("/files", async (req, res) => {
       return {
         key,
         // URL points to YOUR backend (avoids R2 CORS)
-        url: `${req.protocol}://${req.get("host")}/file/${encodeURIComponent(key)}`
+        url: `https://${req.get("host")}/file/${encodeURIComponent(key)}`
       };
     });
 
