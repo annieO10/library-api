@@ -1,7 +1,8 @@
 
 const cors = require("cors");
 const express = require("express");
-const { PutObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const { PutObjectCommand, GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const app = express();
 
@@ -83,17 +84,30 @@ app.get("/files", async (req, res) => {
 
     const result = await r2.send(command);
 
-    const files = result.Contents?.map(file => ({
-      key: file.Key,
-      size: file.Size,
-      lastModified: file.LastModified
-    })) || [];
+    const files = await Promise.all(
+      (result.Contents || []).map(async (file) => {
+
+        const url = await getSignedUrl(
+          r2,
+          new GetObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: file.Key
+          }),
+          { expiresIn: 3600 }
+        );
+
+        return {
+          key: file.Key,
+          url: url
+        };
+      })
+    );
 
     res.json(files);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to list files" });
+    res.status(500).json({ error: "Failed to fetch files" });
   }
 });
 
