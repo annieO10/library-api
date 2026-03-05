@@ -2,7 +2,6 @@
 const cors = require("cors");
 const express = require("express");
 const { PutObjectCommand, GetObjectCommand, ListObjectsV2Command } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const app = express();
 
@@ -76,37 +75,47 @@ app.post("/upload", upload.single("pdf"), async (req, res) => {
 
 app.get("/files", async (req, res) => {
   try {
-
-    const command = new ListObjectsV2Command({
-      Bucket: process.env.R2_BUCKET_NAME
-    });
-
-    const result = await r2.send(command);
-
-    const files = await Promise.all(
-      (result.Contents || []).map(async (file) => {
-
-        const url = await getSignedUrl(
-          r2,
-          new GetObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME,
-            Key: file.Key
-          }),
-          { expiresIn: 3600 }
-        );
-
-        return {
-          key: file.Key,
-          url: url
-        };
-      })
+    const result = await r2.send(
+      new ListObjectsV2Command({ Bucket: process.env.R2_BUCKET_NAME })
     );
 
-    res.json(files);
+    const files = (result.Contents || []).map((obj) => {
+      const key = obj.Key;
 
+      return {
+        key,
+        // URL points to YOUR backend (avoids R2 CORS)
+        url: `${req.protocol}://${req.get("host")}/file/${encodeURIComponent(key)}`
+      };
+    });
+
+    res.json(files);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch files" });
+  }
+});
+
+app.get("/file/*", async (req, res) => {
+  try {
+    // Everything after /file/ (supports keys with slashes too)
+    const key = decodeURIComponent(req.params[0]);
+
+    const obj = await r2.send(
+      new GetObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: key,
+      })
+    );
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${key}"`);
+
+    // Stream R2 -> browser
+    obj.Body.pipe(res);
+  } catch (err) {
+    console.error(err);
+    res.status(404).send("File not found");
   }
 });
 
