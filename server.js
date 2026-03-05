@@ -10,9 +10,18 @@ app.get("/", (req, res) => {
 
 app.get("/books", (req, res) => {
   res.json([
-    { id: 1, title: "Book One", author: "Author A" },
-    { id: 2, title: "Book Two", author: "Author B" }
+    { id: 1, url: "Book One"},
+    { id: 2, url: "Book Two"}
   ]);
+});
+
+app.post("/books", (req, res) => {
+  const book = req.body;
+
+  res.json({
+    message: "Book added",
+    data: book
+  });
 });
 
 app.get("/health", (req, res) => {
