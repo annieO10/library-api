@@ -1,12 +1,16 @@
 
-fetch("https://library-api-7br2.onrender.com/books")
-  .then(res => res.json())
-  .then(data => console.log(data));
+const express = require("express");
+const app = express();
+
+app.use(express.json());
 
 app.get("/", (req, res) => {
-    res.send("Library API running");
+  res.send("Library API is running ✅");
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Listening on", PORT));
